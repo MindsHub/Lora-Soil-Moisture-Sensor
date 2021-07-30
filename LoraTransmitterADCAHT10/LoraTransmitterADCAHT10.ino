@@ -39,7 +39,7 @@ void sensorPowerOff(void)
 #define RFM95_INT 2
 
 // Change to 434.0 or other frequency, must match RX's freq!
-#define RF95_FREQ 433.0
+#define RF95_FREQ 868.0
 
 // Singleton instance of the radio driver
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
@@ -122,25 +122,26 @@ void loop()
   sensorValue = analogRead(sensorPin);
   delay(200);
 
-  if (humiditySensor.available() == true)
-  {
-    //Get the new temperature and humidity value
-    temperature = humiditySensor.getTemperature();
-    humidity = humiditySensor.getHumidity();
-
-    //Print the results
-    Serial.print("Temperature: ");
-    Serial.print(temperature, 2);
-    Serial.print(" C\t");
-    Serial.print("Humidity: ");
-    Serial.print(humidity, 2);
-    Serial.println("% RH");
-
+  if (!humiditySensor.available()) {
+    delay(5000);
+    return; // prevent reading invalid data
   }
-    // Check if any reads failed and exit early (to try again).
+  //Get the new temperature and humidity value
+  temperature = humiditySensor.getTemperature();
+  humidity = humiditySensor.getHumidity();
+  
+  //Print the results
+  Serial.print("Temperature: ");
+  Serial.print(temperature, 2);
+  Serial.print(" C\t");
+  Serial.print("Humidity: ");
+  Serial.print(humidity, 2);
+  Serial.println("% RH");
+
+  // Check if any reads failed and exit early (to try again).
   if (isnan(humidity) || isnan(temperature)) {
     Serial.println(F("Failed to read from AHT sensor!"));
-    //return;
+    return; // do not send invalid data
   }
   
   delay(100);
@@ -171,14 +172,16 @@ void loop()
 
   Serial.println("Sending..."); delay(10);
   rf95.send((uint8_t *)radioPacket, message.length()+1); 
-  Serial.println("Waiting for packet to complete..."); delay(10);
+  // Serial.println("Waiting for packet to complete..."); delay(10);
   rf95.waitPacketSent();
+  Serial.println("Done"); delay(10);
+  rf95.waitAvailableTimeout(500);
   // Now wait for a reply
-  uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+  /*uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
   uint8_t len = sizeof(buf);
 
   Serial.println("Waiting for reply..."); delay(10);
-  if(rf95.waitAvailableTimeout(8000))
+  if(rf95.waitAvailableTimeout(500))
   {
     // Should be a reply message for us now   
     if (rf95.recv(buf, &len))
@@ -196,6 +199,6 @@ void loop()
   else
   {
     Serial.println("No reply, is there a listener around?");
-  }
+  }*/
   delay(1000);
 }

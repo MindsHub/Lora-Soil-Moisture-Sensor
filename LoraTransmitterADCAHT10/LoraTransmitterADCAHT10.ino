@@ -107,20 +107,22 @@ void loop() {
     return; // do not send invalid data
   }
 
-  String message = "#" + (String) packetnum + " Humidity:" + (String) humidity + "% Temperature:" + (String) temperature + "C ADC:" + (String) sensorValue;
+  String message = "{\"H\":" + (String) humidity + ",\"T\":" + (String) temperature + ",\"M\":" + (String) sensorValue + "}";
   packetnum++;
+  Serial.print("Packet ");
+  Serial.print(packetnum);
+  Serial.print(": ");
   Serial.println(message);
-  Serial.println("Transmit: Sending to rf95_server");
 
   // Send a message to rf95_server
   uint8_t radioPacket[message.length() + 1];
   message.toCharArray(radioPacket, message.length() + 1);
   radioPacket[message.length() + 1] = '\0';
 
-  Serial.println("Sending...");
+  Serial.print("Sending... ");
   rf95.send((uint8_t *)radioPacket, message.length() + 1);
   rf95.waitPacketSent();
-  Serial.println("Sent, waiting timeout...");
+  Serial.print("Timeout... ");
   rf95.waitAvailableTimeout(500);
   Serial.println("Done");
 

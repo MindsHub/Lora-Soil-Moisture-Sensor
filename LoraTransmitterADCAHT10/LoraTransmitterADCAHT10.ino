@@ -15,15 +15,11 @@
 #include <SPI.h>
 #include "RH_RF95.h"
 
-
 #include "I2C_AHT10.h"
 #include <Wire.h>
-AHT10 humiditySensor;
 
-
-int sensorPin = A2;    // select the input pin for the potentiometer
-int sensorPowerCtrlPin = 5;
-int16_t packetnum = 0;  // packet counter, we increment per xmission
+#define MOISTURE_SENSOR_PIN A2 // select the input pin for the potentiometer
+#define MOISTURE_SENSOR_POWER_CONTROL_PIN 5
 
 #define RFM95_CS 10
 #define RFM95_RST 4
@@ -35,14 +31,16 @@ int16_t packetnum = 0;  // packet counter, we increment per xmission
 // Singleton instance of the radio driver
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
+AHT10 humiditySensor;
+
 void setup()  {
   pinMode(RFM95_RST, OUTPUT);
   digitalWrite(RFM95_RST, LOW);
   delay(100);
   digitalWrite(RFM95_RST, HIGH);
 
-  pinMode(sensorPowerCtrlPin, OUTPUT);
-  digitalWrite(sensorPowerCtrlPin, HIGH); //Sensor power on
+  pinMode(MOISTURE_SENSOR_POWER_CONTROL_PIN, OUTPUT);
+  digitalWrite(MOISTURE_SENSOR_POWER_CONTROL_PIN, HIGH); //Sensor power on
 
   Serial.begin(115200);
   delay(100);
@@ -99,7 +97,7 @@ void loop() {
   // get the new temperature, humidity and soil moisture values
   float temperature = humiditySensor.getTemperature();
   float humidity = humiditySensor.getHumidity();
-  int sensorValue = analogRead(sensorPin);
+  int sensorValue = analogRead(MOISTURE_SENSOR_PIN);
 
   // check if any reads failed and exit early (to try again)
   if (isnan(humidity) || isnan(temperature)) {
@@ -108,10 +106,6 @@ void loop() {
   }
 
   String message = "{\"H\":" + (String) humidity + ",\"T\":" + (String) temperature + ",\"M\":" + (String) sensorValue + "}";
-  packetnum++;
-  Serial.print("Packet ");
-  Serial.print(packetnum);
-  Serial.print(": ");
   Serial.println(message);
 
   // Send a message to rf95_server

@@ -28,6 +28,8 @@
 // Change to 434.0 or other frequency, must match RX's freq!
 #define RF95_FREQ 868.0
 
+constexpr int ID = 3;
+
 // Singleton instance of the radio driver
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
@@ -105,7 +107,7 @@ void loop() {
     return; // do not send invalid data
   }
 
-  String message = "{\"H\":" + (String) humidity + ",\"T\":" + (String) temperature + ",\"M\":" + (String) sensorValue + "}";
+  String message = "{\"I\":" + (String) ID + ",\"H\":" + (String) humidity + ",\"T\":" + (String) temperature + ",\"M\":" + (String) sensorValue + "}";
   Serial.println(message);
 
   // Send a message to rf95_server
@@ -121,5 +123,23 @@ void loop() {
   Serial.println("Done");
 
   // the code waiting for reply was removed
+  // Now wait for a reply
+  uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+  uint8_t len = sizeof(buf);
+
+  Serial.println("Waiting for reply..."); delay(10);
+  if(rf95.waitAvailableTimeout(8000)) {
+    // Should be a reply message for us now   
+    if (rf95.recv(buf, &len)) {
+      Serial.print("Got reply: ");
+      Serial.println((char*)buf);
+      Serial.print("RSSI: ");
+      Serial.println(rf95.lastRssi(), DEC);    
+    } else {
+      Serial.println("Receive failed");
+    }
+  } else {
+    Serial.println("No reply, is there a listener around?");
+  }
   delay(1000);
 }
